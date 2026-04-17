@@ -1,0 +1,2 @@
+export const EXTERNAL_API_CLIENT_PLACEHOLDER = true;
+

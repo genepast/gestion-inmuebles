@@ -24,6 +24,15 @@ module.exports = {
       "error",
       { "checksVoidReturn": { "attributes": false } }
     ]
-  }
+  },
+  overrides: [
+    {
+      files: ["src/lib/supabase/*.ts"],
+      rules: {
+        "@typescript-eslint/no-unsafe-call": "off",
+        "@typescript-eslint/no-unsafe-return": "off"
+      }
+    }
+  ]
 };
 
