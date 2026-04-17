@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "format": "prettier . --check",
     "format:write": "prettier . --write",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "dependencies": {
     "next": "^14.0.0",
