@@ -27,6 +27,9 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 
+# husky (carpeta interna autogenerada)
+.husky/_/
+
 # docs (no subir el enunciado)
 Prueba-Tecnica-Gestion-Inmuebles.pdf
 
