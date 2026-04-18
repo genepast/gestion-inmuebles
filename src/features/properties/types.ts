@@ -24,3 +24,40 @@ export type PropertyType =
 
 // Derived from generated DB types — always in sync with the real schema.
 export type PropertyRow = Tables<"properties">;
+
+export interface PropertyListItem {
+  id: string;
+  title: string;
+  property_type: string;
+  operation_type: string;
+  status: string;
+  price_amount: number;
+  price_currency: string;
+  city: string | null;
+  province: string | null;
+  country: string | null;
+  bedrooms: number;
+  bathrooms: number;
+  total_area_m2: number | null;
+  source: string;
+  created_at: string | null;
+}
+
+export interface PropertyFilters {
+  page?: number;
+  pageSize?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  type?: string;
+  city?: string;
+  status?: string;
+  q?: string;
+}
+
+export interface PropertiesPageResponse {
+  data: PropertyListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}

@@ -47,7 +47,7 @@
 ## ⏳ Pendiente
 
 ### Fase 5: Frontend y UI
-- `feat(front): paginated grid/table views with url state and skeletons`
+- `feat(front): paginated grid/table views with url state and skeletons` ✅
   - Página src/app/(dashboard)/properties/page.tsx con TanStack Query
   - Paginación server-side y filtros combinables (precio, tipo, ciudad, estado)
   - Filtros sincronizados con URL Query Params
