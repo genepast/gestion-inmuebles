@@ -277,7 +277,6 @@ i18n · modo oscuro · Supabase Realtime · PDF de ficha · CI con GitHub Action
 
 
 ## Gestión de tareas
-
 Antes de implementar cualquier tarea, revisá `TASKS.md` para entender
 qué está completado y qué sigue.
 Al terminar cada tarea, actualizá `TASKS.md` moviendo la tarea
