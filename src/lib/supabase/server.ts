@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
 type CookieSetOptions = Parameters<ReturnType<typeof cookies>["set"]>[2];
@@ -11,7 +10,7 @@ type CookieToSet = {
   options?: CookieSetOptions;
 };
 
-export function createSupabaseServerClient(): SupabaseClient<Database> {
+export function createSupabaseServerClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 

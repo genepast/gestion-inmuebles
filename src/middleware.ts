@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import type { Database } from "@/lib/supabase/database.types";
 
 type AppRole = "admin" | "agent" | "viewer";
 
@@ -14,13 +15,6 @@ function isEditOrCreateRoute(pathname: string) {
   if (pathname === "/properties/new") return true;
   if (pathname.startsWith("/properties/") && pathname.endsWith("/edit")) return true;
   return false;
-}
-
-function redirectToLogin(request: NextRequest) {
-  const url = request.nextUrl.clone();
-  url.pathname = "/login";
-  url.searchParams.set("next", request.nextUrl.pathname);
-  return NextResponse.redirect(url);
 }
 
 export async function middleware(request: NextRequest) {
@@ -38,31 +32,41 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute =
     isAuthRoute || pathname.startsWith("/_next/") || pathname === "/favicon.ico";
 
-  const response = NextResponse.next();
+  // Acumulamos las cookies que Supabase necesite escribir (ej. refresh de token)
+  // y las aplicamos al response final, sea redirect o next().
+  const pendingCookies: CookieToSet[] = [];
 
-  const supabase = createServerClient(url, anonKey, {
+  function withCookies(res: NextResponse): NextResponse {
+    pendingCookies.forEach(({ name, value, options }) => {
+      res.cookies.set(name, value, options);
+    });
+    return res;
+  }
+
+  const supabase = createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet: CookieToSet[]) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options);
-        });
-      }
-    }
+        cookiesToSet.forEach((c) => pendingCookies.push(c));
+      },
+    },
   });
 
-  // 1) Mantener la sesión sincronizada vía cookies (refresh si aplica)
+  // 1) Validar sesión contra Supabase (más seguro que getSession, valida el JWT)
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
 
   // 2) Redirigir no autenticados al intentar entrar al dashboard
   if (!user) {
     if (!isPublicRoute && !isApiRoute) {
-      return redirectToLogin(request);
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set("next", pathname);
+      return withCookies(NextResponse.redirect(loginUrl));
     }
-    return response;
+    return withCookies(NextResponse.next());
   }
 
   // Si ya está autenticado, no tiene sentido quedarse en /login o /register
@@ -70,28 +74,24 @@ export async function middleware(request: NextRequest) {
     const target = request.nextUrl.clone();
     target.pathname = "/";
     target.search = "";
-    return NextResponse.redirect(target);
+    return withCookies(NextResponse.redirect(target));
   }
 
-  // 3) Sincronización de perfil: asegurar rol 'viewer' por defecto si no existe profile
+  // 3) Leer rol del perfil. La creación del perfil la maneja un trigger de DB en auth.users.
   let role: AppRole = "viewer";
 
   try {
-    const profileRes = await supabase
-      .from<{ role: AppRole }>("profiles")
+    const { data: profile } = await supabase
+      .from("profiles")
       .select("role")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (profileRes.data?.role === "admin" || profileRes.data?.role === "agent") {
-      role = profileRes.data.role;
-    } else if (!profileRes.data) {
-      // Best-effort: requiere una policy de RLS que permita insertar el propio perfil.
-      await supabase.from("profiles").insert({ id: user.id, role: "viewer" });
+    if (profile?.role === "admin" || profile?.role === "agent") {
+      role = profile.role;
     }
   } catch {
-    // Si todavía no hay RLS/policies, igual protegemos por defecto como viewer.
-    role = "viewer";
+    // Si RLS aún no está configurada, protegemos como viewer por defecto.
   }
 
   // 4) Protección por rol: solo admin/agent pueden crear o editar
@@ -99,10 +99,10 @@ export async function middleware(request: NextRequest) {
     const target = request.nextUrl.clone();
     target.pathname = "/properties";
     target.searchParams.set("error", "forbidden");
-    return NextResponse.redirect(target);
+    return withCookies(NextResponse.redirect(target));
   }
 
-  return response;
+  return withCookies(NextResponse.next());
 }
 
 export const config = {
