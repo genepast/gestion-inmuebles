@@ -25,24 +25,5 @@ module.exports = {
       { "checksVoidReturn": { "attributes": false } }
     ]
   },
-  overrides: [
-    {
-      files: ["src/lib/supabase/*.ts"],
-      rules: {
-        "@typescript-eslint/no-unsafe-call": "off",
-        "@typescript-eslint/no-unsafe-return": "off"
-      }
-    },
-    {
-      files: ["src/middleware.ts"],
-      rules: {
-        "@typescript-eslint/no-unsafe-call": "off",
-        "@typescript-eslint/no-unsafe-return": "off",
-        "@typescript-eslint/no-unsafe-assignment": "off",
-        "@typescript-eslint/no-unsafe-member-access": "off",
-        "@typescript-eslint/no-unsafe-argument": "off"
-      }
-    }
-  ]
 };
 
