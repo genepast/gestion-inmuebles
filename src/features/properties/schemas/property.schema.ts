@@ -74,4 +74,6 @@ export const propertyFormSchema = z.object({
 
 export type PropertyFormValues = z.infer<typeof propertyFormSchema>;
 
-export const propertyApiSchema = propertyFormSchema;
+export const propertyApiSchema = propertyFormSchema.extend({
+  reason: z.string().optional()
+});

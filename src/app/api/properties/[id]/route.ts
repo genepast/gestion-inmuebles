@@ -66,7 +66,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { status: newStatus, ...rest } = parsed.data;
+  const { status: newStatus, reason, ...rest } = parsed.data;
 
   const { data: current, error: fetchError } = await supabase
     .from("properties")
@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
     }
     try {
-      await transitionPropertyStatus(params.id, newStatus as PropertyStatus, user.id);
+      await transitionPropertyStatus(params.id, newStatus as PropertyStatus, user.id, reason);
     } catch (err) {
       if (err instanceof StatusTransitionError) {
         return NextResponse.json({ error: err.message }, { status: 422 });

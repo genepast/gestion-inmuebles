@@ -9,6 +9,7 @@ import {
   OPERATION_TYPE_LABELS,
   formatPrice
 } from "@/features/properties/utils";
+import { StatusChangeButton } from "@/features/properties/components/StatusChangeButton";
 import type { PropertyStatus, PropertyType, OperationType } from "@/features/properties/types";
 
 interface Props {
@@ -132,6 +133,21 @@ export default async function PropertyDetailPage({ params }: Props) {
         </p>
         <p className="text-sm text-slate-500 mt-1">{opLabel}</p>
       </div>
+
+      {/* Status transition */}
+      {role !== "viewer" && (
+        <StatusChangeButton
+          propertyId={property.id}
+          currentStatus={property.status as PropertyStatus}
+          currentTitle={property.title}
+          currentPrice={property.price_amount}
+          currentCurrency={property.price_currency}
+          currentType={property.property_type}
+          currentOperation={property.operation_type}
+          currentBedrooms={property.bedrooms}
+          currentBathrooms={property.bathrooms}
+        />
+      )}
 
       {/* Images */}
       {imageUrls.length > 0 ? (

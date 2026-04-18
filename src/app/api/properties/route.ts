@@ -82,9 +82,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { reason: _reason, ...insertData } = parsed.data;
   const { data, error } = await supabase
     .from("properties")
-    .insert({ ...parsed.data, created_by: user.id, source: "manual" })
+    .insert({ ...insertData, created_by: user.id, source: "manual" })
     .select()
     .single();
 
