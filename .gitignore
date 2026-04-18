@@ -30,6 +30,9 @@ pnpm-debug.log*
 # husky (carpeta interna autogenerada)
 .husky/_/
 
+# supabase cli temp files
+supabase/.temp/
+
 # docs (no subir el enunciado)
 Prueba-Tecnica-Gestion-Inmuebles.pdf
 
