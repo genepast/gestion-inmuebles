@@ -71,7 +71,7 @@
   - Métricas: stock total, distribución por estado y tipo
   - Gráfico de ingresos por semana (últimos 3 meses) con Recharts o Nivo
 
-- `feat(api): export filtered properties to csv`
+- `feat(api): export filtered properties to csv` ✅
   - Route Handler GET /api/properties/export
   - Exportación respeta filtros activos del listado
 

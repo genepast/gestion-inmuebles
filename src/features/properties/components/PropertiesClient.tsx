@@ -83,6 +83,21 @@ export function PropertiesClient() {
             </button>
           </div>
           <a
+            href={`/api/properties/export?${new URLSearchParams(
+              Object.entries({
+                q: filters.q,
+                city: filters.city,
+                type: filters.type,
+                status: filters.status,
+                minPrice: filters.minPrice?.toString(),
+                maxPrice: filters.maxPrice?.toString()
+              }).filter(([, v]) => v !== undefined) as [string, string][]
+            ).toString()}`}
+            className="px-3 py-1.5 text-sm border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition-colors"
+          >
+            Exportar CSV
+          </a>
+          <a
             href="/properties/new"
             className="px-4 py-2 text-sm bg-slate-900 text-white rounded-md hover:bg-slate-700 transition-colors"
           >
