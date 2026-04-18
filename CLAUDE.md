@@ -211,6 +211,8 @@ export interface ExternalPropertyDTO {
 - **Zod** para validar tanto en cliente (UX) como en servidor (seguridad).
 - **`next/image`** para todas las imágenes.
 - `staleTime` apropiado en React Query según el tipo de dato.
+- **Sin explicaciones innecesarias.** No expliques el código que escribís
+  salvo que se te pida explícitamente.
 
 ---
 
@@ -272,3 +274,11 @@ i18n · modo oscuro · Supabase Realtime · PDF de ficha · CI con GitHub Action
 **Testing mínimo**
 - [ ] Al menos 1 test de integración de flujo crítico (ej. crear propiedad end-to-end)
 - [ ] Al menos 3 tests unitarios de utilidades / mappers / validadores
+
+
+## Gestión de tareas
+
+Antes de implementar cualquier tarea, revisá `TASKS.md` para entender
+qué está completado y qué sigue.
+Al terminar cada tarea, actualizá `TASKS.md` moviendo la tarea
+correspondiente a ✅ Completado, antes de que yo haga el commit.
