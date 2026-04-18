@@ -7,6 +7,34 @@ import {
 } from "@/features/properties/services/status.service";
 import type { PropertyStatus } from "@/features/properties/types";
 
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from("properties")
+    .select(
+      "*, property_images(id, storage_path, position, is_primary), property_status_history(id, from_status, to_status, changed_by, reason, changed_at)"
+    )
+    .eq("id", params.id)
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "Propiedad no encontrada" }, { status: 404 });
+  }
+
+  return NextResponse.json(data);
+}
+
 const VALID_STATUSES = new Set<string>([
   "draft",
   "available",
