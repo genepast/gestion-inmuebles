@@ -1,9 +1,14 @@
-export default function LoginPage() {
-  return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="text-xl font-semibold tracking-tight">Login</h1>
-      <p className="mt-2 text-sm text-slate-600">Pendiente: Supabase Auth</p>
-    </main>
-  );
+import { LoginForm } from "@/features/auth/components/LoginForm";
+
+interface Props {
+  searchParams: { next?: string };
 }
 
+export default function LoginPage({ searchParams }: Props) {
+  return (
+    <>
+      <h2 className="text-lg font-semibold text-slate-900 mb-6">Iniciar sesión</h2>
+      <LoginForm nextPath={searchParams.next} />
+    </>
+  );
+}

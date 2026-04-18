@@ -47,6 +47,13 @@
 ## ⏳ Pendiente
 
 ### Fase 5: Frontend y UI
+- `feat(auth): login and register UI forms` ✅
+  - Formulario de login en src/app/(auth)/login/page.tsx (email + password, Zod + RHF)
+  - Formulario de registro en src/app/(auth)/register/page.tsx
+  - Route Handler POST /api/auth/signout para cerrar sesión server-side
+  - Botón de logout en el header del dashboard con email del usuario
+  - Redirección post-login al dashboard (respeta ?next=), post-logout al login
+
 - `feat(front): paginated grid/table views with url state and skeletons` ✅
   - Página src/app/(dashboard)/properties/page.tsx con TanStack Query
   - Paginación server-side y filtros combinables (precio, tipo, ciudad, estado)
