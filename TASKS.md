@@ -66,7 +66,7 @@
   - Optimistic Updates en el listado al editar
 
 ### Fase 6: Dashboard y Exportación
-- `feat(dashboard): analytics view with income and distribution charts`
+- `feat(dashboard): analytics view with income and distribution charts` ✅
   - Dashboard en src/app/(dashboard)/page.tsx
   - Métricas: stock total, distribución por estado y tipo
   - Gráfico de ingresos por semana (últimos 3 meses) con Recharts o Nivo
