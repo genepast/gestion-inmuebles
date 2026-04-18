@@ -41,6 +41,7 @@ export function PropertyTable({ properties }: Props) {
             <th className="text-right px-4 py-3 font-medium text-slate-700 hidden lg:table-cell">
               Superficie
             </th>
+            <th className="px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -86,6 +87,14 @@ export function PropertyTable({ properties }: Props) {
                 </td>
                 <td className="px-4 py-3 text-right text-slate-600 hidden lg:table-cell">
                   {p.total_area_m2 ? `${p.total_area_m2} m²` : "—"}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <Link
+                    href={`/properties/${p.id}/edit`}
+                    className="text-xs text-slate-500 hover:text-slate-900"
+                  >
+                    Editar
+                  </Link>
                 </td>
               </tr>
             );

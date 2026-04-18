@@ -60,7 +60,7 @@
   - Filtros sincronizados con URL Query Params
   - Skeletons para fetches > 300ms
 
-- `feat(front): multi-step form with optimistic updates and storage`
+- `feat(front): multi-step form with optimistic updates and storage` ✅
   - Formulario alta/edición con React Hook Form + Zod
   - Subida de múltiples imágenes a Supabase Storage con preview y reordenamiento
   - Optimistic Updates en el listado al editar

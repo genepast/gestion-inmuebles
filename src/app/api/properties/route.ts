@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { propertyApiSchema } from "@/features/properties/schemas/property.schema";
 
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -57,4 +58,39 @@ export async function GET(request: NextRequest) {
     pageSize,
     totalPages: Math.ceil((count ?? 0) / pageSize)
   });
+}
+
+export async function POST(request: NextRequest) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  const parsed = propertyApiSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from("properties")
+    .insert({ ...parsed.data, created_by: user.id, source: "manual" })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data, { status: 201 });
 }
