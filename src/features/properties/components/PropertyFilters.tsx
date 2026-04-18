@@ -2,11 +2,15 @@
 
 import { useRef, useState, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import type { PropertyType, PropertyStatus } from "../types";
-import { PROPERTY_TYPE_LABELS, STATUS_LABELS } from "../utils";
+import type { PropertyType, PropertyStatus, OperationType } from "../types";
+import { PROPERTY_TYPE_LABELS, STATUS_LABELS, OPERATION_TYPE_LABELS } from "../utils";
 
 const PROPERTY_TYPES = Object.entries(PROPERTY_TYPE_LABELS) as [PropertyType, string][];
 const STATUSES = Object.entries(STATUS_LABELS) as [PropertyStatus, string][];
+const OPERATIONS = Object.entries(OPERATION_TYPE_LABELS) as [OperationType, string][];
+
+const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
+const BATHROOM_OPTIONS = [1, 2, 3, 4];
 
 export function PropertyFilters() {
   const router = useRouter();
@@ -84,6 +88,18 @@ export function PropertyFilters() {
           ))}
         </select>
         <select
+          value={searchParams.get("operation") ?? ""}
+          onChange={(e) => handleSelectChange("operation", e.target.value)}
+          className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
+        >
+          <option value="">Todas las operaciones</option>
+          {OPERATIONS.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <select
           value={searchParams.get("status") ?? ""}
           onChange={(e) => handleSelectChange("status", e.target.value)}
           className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
@@ -92,6 +108,30 @@ export function PropertyFilters() {
           {STATUSES.map(([value, label]) => (
             <option key={value} value={value}>
               {label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={searchParams.get("minBedrooms") ?? ""}
+          onChange={(e) => handleSelectChange("minBedrooms", e.target.value)}
+          className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
+        >
+          <option value="">Ambientes (mín.)</option>
+          {BEDROOM_OPTIONS.map((n) => (
+            <option key={n} value={n}>
+              {n}+
+            </option>
+          ))}
+        </select>
+        <select
+          value={searchParams.get("minBathrooms") ?? ""}
+          onChange={(e) => handleSelectChange("minBathrooms", e.target.value)}
+          className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
+        >
+          <option value="">Baños (mín.)</option>
+          {BATHROOM_OPTIONS.map((n) => (
+            <option key={n} value={n}>
+              {n}+
             </option>
           ))}
         </select>

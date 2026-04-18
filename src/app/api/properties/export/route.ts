@@ -6,8 +6,11 @@ const querySchema = z.object({
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
   type: z.string().optional(),
+  operation: z.string().optional(),
   city: z.string().optional(),
   status: z.string().optional(),
+  minBedrooms: z.coerce.number().int().nonnegative().optional(),
+  minBathrooms: z.coerce.number().int().nonnegative().optional(),
   q: z.string().optional()
 });
 
@@ -54,7 +57,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Parámetros inválidos" }, { status: 400 });
   }
 
-  const { minPrice, maxPrice, type, city, status, q } = parsed.data;
+  const { minPrice, maxPrice, type, operation, city, status, minBedrooms, minBathrooms, q } = parsed.data;
 
   let query = supabase
     .from("properties")
@@ -66,8 +69,11 @@ export async function GET(request: NextRequest) {
   if (minPrice !== undefined) query = query.gte("price_amount", minPrice);
   if (maxPrice !== undefined) query = query.lte("price_amount", maxPrice);
   if (type) query = query.eq("property_type", type);
+  if (operation) query = query.eq("operation_type", operation);
   if (city) query = query.ilike("city", `%${city}%`);
   if (status) query = query.eq("status", status);
+  if (minBedrooms !== undefined) query = query.gte("bedrooms", minBedrooms);
+  if (minBathrooms !== undefined) query = query.gte("bathrooms", minBathrooms);
   if (q) query = query.textSearch("fts", q, { type: "websearch" });
 
   const { data, error } = await query;

@@ -49,8 +49,11 @@ export interface PropertyFilters {
   minPrice?: number;
   maxPrice?: number;
   type?: string;
+  operation?: string;
   city?: string;
   status?: string;
+  minBedrooms?: number;
+  minBathrooms?: number;
   q?: string;
 }
 

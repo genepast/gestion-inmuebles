@@ -25,13 +25,12 @@ export function PropertiesClient() {
     q: searchParams.get("q") ?? undefined,
     city: searchParams.get("city") ?? undefined,
     type: searchParams.get("type") ?? undefined,
+    operation: searchParams.get("operation") ?? undefined,
     status: searchParams.get("status") ?? undefined,
-    minPrice: searchParams.get("minPrice")
-      ? Number(searchParams.get("minPrice"))
-      : undefined,
-    maxPrice: searchParams.get("maxPrice")
-      ? Number(searchParams.get("maxPrice"))
-      : undefined
+    minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
+    maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
+    minBedrooms: searchParams.get("minBedrooms") ? Number(searchParams.get("minBedrooms")) : undefined,
+    minBathrooms: searchParams.get("minBathrooms") ? Number(searchParams.get("minBathrooms")) : undefined
   };
 
   const { data, isLoading, isFetching, isError } = useProperties(filters);
@@ -88,9 +87,12 @@ export function PropertiesClient() {
                 q: filters.q,
                 city: filters.city,
                 type: filters.type,
+                operation: filters.operation,
                 status: filters.status,
                 minPrice: filters.minPrice?.toString(),
-                maxPrice: filters.maxPrice?.toString()
+                maxPrice: filters.maxPrice?.toString(),
+                minBedrooms: filters.minBedrooms?.toString(),
+                minBathrooms: filters.minBathrooms?.toString()
               }).filter(([, v]) => v !== undefined) as [string, string][]
             ).toString()}`}
             className="px-3 py-1.5 text-sm border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition-colors"

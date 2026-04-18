@@ -12,8 +12,11 @@ async function fetchProperties(filters: PropertyFilters): Promise<PropertiesPage
   if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
   if (filters.type) params.set("type", filters.type);
+  if (filters.operation) params.set("operation", filters.operation);
   if (filters.city) params.set("city", filters.city);
   if (filters.status) params.set("status", filters.status);
+  if (filters.minBedrooms !== undefined) params.set("minBedrooms", String(filters.minBedrooms));
+  if (filters.minBathrooms !== undefined) params.set("minBathrooms", String(filters.minBathrooms));
   if (filters.q) params.set("q", filters.q);
 
   const response = await fetch(`/api/properties?${params.toString()}`);
