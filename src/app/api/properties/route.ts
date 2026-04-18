@@ -14,6 +14,7 @@ const querySchema = z.object({
   status: z.string().optional(),
   minBedrooms: z.coerce.number().int().nonnegative().optional(),
   minBathrooms: z.coerce.number().int().nonnegative().optional(),
+  sort: z.enum(["created_at:desc", "price_amount:asc", "price_amount:desc", "total_area_m2:desc"]).optional(),
   q: z.string().optional()
 });
 
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Parámetros inválidos" }, { status: 400 });
   }
 
-  const { page, pageSize, minPrice, maxPrice, type, operation, city, status, minBedrooms, minBathrooms, q } = parsed.data;
+  const { page, pageSize, minPrice, maxPrice, type, operation, city, status, minBedrooms, minBathrooms, sort, q } = parsed.data;
 
   const supabase = createSupabaseServerClient();
 
@@ -49,8 +50,9 @@ export async function GET(request: NextRequest) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
+  const [sortCol, sortDir] = (sort ?? "created_at:desc").split(":") as [string, string];
   const { data, error, count } = await query
-    .order("created_at", { ascending: false })
+    .order(sortCol, { ascending: sortDir === "asc", nullsFirst: false })
     .range(from, to);
 
   if (error) {

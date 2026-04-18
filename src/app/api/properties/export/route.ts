@@ -11,6 +11,7 @@ const querySchema = z.object({
   status: z.string().optional(),
   minBedrooms: z.coerce.number().int().nonnegative().optional(),
   minBathrooms: z.coerce.number().int().nonnegative().optional(),
+  sort: z.enum(["created_at:desc", "price_amount:asc", "price_amount:desc", "total_area_m2:desc"]).optional(),
   q: z.string().optional()
 });
 
@@ -57,14 +58,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Parámetros inválidos" }, { status: 400 });
   }
 
-  const { minPrice, maxPrice, type, operation, city, status, minBedrooms, minBathrooms, q } = parsed.data;
+  const { minPrice, maxPrice, type, operation, city, status, minBedrooms, minBathrooms, sort, q } = parsed.data;
 
   let query = supabase
     .from("properties")
     .select(
       "id, title, property_type, operation_type, status, price_amount, price_currency, city, province, country, bedrooms, bathrooms, total_area_m2, source, created_at"
     )
-    .order("created_at", { ascending: false });
+    .order((sort ?? "created_at:desc").split(":")[0] ?? "created_at", {
+      ascending: (sort ?? "created_at:desc").split(":")[1] === "asc",
+      nullsFirst: false
+    });
 
   if (minPrice !== undefined) query = query.gte("price_amount", minPrice);
   if (maxPrice !== undefined) query = query.lte("price_amount", maxPrice);

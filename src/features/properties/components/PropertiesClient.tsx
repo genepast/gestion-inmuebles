@@ -7,7 +7,7 @@ import { PropertyCard } from "./PropertyCard";
 import { PropertyTable } from "./PropertyTable";
 import { PropertiesGridSkeleton, PropertiesTableSkeleton } from "./PropertySkeletons";
 import { Pagination } from "./Pagination";
-import type { PropertyFilters as Filters } from "../types";
+import type { PropertyFilters as Filters, SortOption } from "../types";
 
 const PAGE_SIZE = 12;
 
@@ -30,7 +30,8 @@ export function PropertiesClient() {
     minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
     maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
     minBedrooms: searchParams.get("minBedrooms") ? Number(searchParams.get("minBedrooms")) : undefined,
-    minBathrooms: searchParams.get("minBathrooms") ? Number(searchParams.get("minBathrooms")) : undefined
+    minBathrooms: searchParams.get("minBathrooms") ? Number(searchParams.get("minBathrooms")) : undefined,
+    sort: (searchParams.get("sort") as SortOption) ?? undefined
   };
 
   const { data, isLoading, isFetching, isError } = useProperties(filters);
@@ -39,6 +40,14 @@ export function PropertiesClient() {
   function toggleView(newView: "grid" | "table") {
     const params = new URLSearchParams(searchParams.toString());
     params.set("view", newView);
+    router.replace(`${pathname}?${params.toString()}`);
+  }
+
+  function handleSort(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    if (value) params.set("sort", value);
+    else params.delete("sort");
     router.replace(`${pathname}?${params.toString()}`);
   }
 
@@ -59,6 +68,16 @@ export function PropertiesClient() {
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
+          <select
+            value={filters.sort ?? ""}
+            onChange={(e) => handleSort(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded-md border border-slate-200 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          >
+            <option value="">Más recientes</option>
+            <option value="price_amount:asc">Precio: menor a mayor</option>
+            <option value="price_amount:desc">Precio: mayor a menor</option>
+            <option value="total_area_m2:desc">Superficie: mayor a menor</option>
+          </select>
           <div className="flex rounded-md border border-slate-200 overflow-hidden text-sm">
             <button
               onClick={() => toggleView("grid")}
@@ -92,7 +111,8 @@ export function PropertiesClient() {
                 minPrice: filters.minPrice?.toString(),
                 maxPrice: filters.maxPrice?.toString(),
                 minBedrooms: filters.minBedrooms?.toString(),
-                minBathrooms: filters.minBathrooms?.toString()
+                minBathrooms: filters.minBathrooms?.toString(),
+                sort: filters.sort
               }).filter(([, v]) => v !== undefined) as [string, string][]
             ).toString()}`}
             className="px-3 py-1.5 text-sm border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition-colors"

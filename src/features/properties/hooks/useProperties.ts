@@ -17,6 +17,7 @@ async function fetchProperties(filters: PropertyFilters): Promise<PropertiesPage
   if (filters.status) params.set("status", filters.status);
   if (filters.minBedrooms !== undefined) params.set("minBedrooms", String(filters.minBedrooms));
   if (filters.minBathrooms !== undefined) params.set("minBathrooms", String(filters.minBathrooms));
+  if (filters.sort) params.set("sort", filters.sort);
   if (filters.q) params.set("q", filters.q);
 
   const response = await fetch(`/api/properties?${params.toString()}`);
