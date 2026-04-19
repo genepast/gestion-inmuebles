@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -45,6 +45,15 @@ export function ImageUploader({ propertyId, initialImages = [], onChange }: Prop
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const imagesRef = useRef(images);
+  useEffect(() => { imagesRef.current = images; });
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach((img) => {
+        if (img.file) URL.revokeObjectURL(img.previewUrl);
+      });
+    };
+  }, []);
 
   function notify(updated: ImageEntry[]) {
     setImages(updated);
@@ -123,6 +132,7 @@ export function ImageUploader({ propertyId, initialImages = [], onChange }: Prop
       updated[0]!.isPrimary = true;
     }
     notify(updated);
+    if (img.file) URL.revokeObjectURL(img.previewUrl);
     // Delete files uploaded in this session (storagePath set but not yet a DB record)
     // to avoid orphaned files when the user removes them before saving.
     if (img.storagePath && !img.isExisting) {
