@@ -74,3 +74,17 @@ create policy "prop_update_admin"
 create policy "prop_delete_admin"
   on properties for delete
   using (public.current_user_role() = 'admin');
+
+-- ============================================================
+-- Políticas para 'property_status_history'
+-- ============================================================
+
+-- SELECT: admin y agent pueden ver el historial
+create policy "history_select"
+  on property_status_history for select
+  using (public.current_user_role() in ('admin', 'agent'));
+
+-- INSERT: admin y agent pueden registrar cambios de estado
+create policy "history_insert"
+  on property_status_history for insert
+  with check (public.current_user_role() in ('admin', 'agent'));

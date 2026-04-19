@@ -10,9 +10,10 @@ import {
 
 interface Props {
   property: PropertyListItem;
+  role?: string;
 }
 
-export function PropertyCard({ property }: Props) {
+export function PropertyCard({ property, role = "viewer" }: Props) {
   const statusClass =
     STATUS_CLASSES[property.status as PropertyStatus] ?? "bg-slate-100 text-slate-700";
   const statusLabel = STATUS_LABELS[property.status as PropertyStatus] ?? property.status;
@@ -64,12 +65,14 @@ export function PropertyCard({ property }: Props) {
         </div>
       </Link>
 
-      <Link
-        href={`/properties/${property.id}/edit`}
-        className="absolute top-2 right-2 hidden group-hover/card:flex items-center gap-1 rounded bg-white/90 px-2 py-1 text-xs font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-white"
-      >
-        Editar
-      </Link>
+      {role !== "viewer" && (
+        <Link
+          href={`/properties/${property.id}/edit`}
+          className="absolute top-2 right-2 hidden group-hover/card:flex items-center gap-1 rounded bg-white/90 px-2 py-1 text-xs font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-white"
+        >
+          Editar
+        </Link>
+      )}
     </div>
   );
 }

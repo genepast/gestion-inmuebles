@@ -108,7 +108,7 @@ export default async function PropertyDetailPage({ params }: Props) {
                 {statusLabel}
               </span>
               <span className="text-xs text-slate-400">{typeLabel}</span>
-              {property.source === "external" && (
+              {property.source === "external" && role !== "viewer" && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
                   Sincronizado
                 </span>
@@ -268,11 +268,13 @@ export default async function PropertyDetailPage({ params }: Props) {
       )}
 
       {/* Metadata */}
-      <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-400">
-        <span>Creado: {formatDate(property.created_at)}</span>
-        <span>Actualizado: {formatDate(property.updated_at)}</span>
-        {property.external_id && <span>ID externo: {property.external_id}</span>}
-      </div>
+      {role !== "viewer" && (
+        <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-400">
+          <span>Creado: {formatDate(property.created_at)}</span>
+          <span>Actualizado: {formatDate(property.updated_at)}</span>
+          {property.external_id && <span>ID externo: {property.external_id}</span>}
+        </div>
+      )}
     </section>
   );
 }

@@ -11,7 +11,7 @@ import type { PropertyFilters as Filters, SortOption } from "../types";
 
 const PAGE_SIZE = 12;
 
-export function PropertiesClient() {
+export function PropertiesClient({ role = "viewer" }: { role?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -100,31 +100,35 @@ export function PropertiesClient() {
               ☰ Lista
             </button>
           </div>
-          <a
-            href={`/api/properties/export?${new URLSearchParams(
-              Object.entries({
-                q: filters.q,
-                city: filters.city,
-                type: filters.type,
-                operation: filters.operation,
-                status: filters.status,
-                minPrice: filters.minPrice?.toString(),
-                maxPrice: filters.maxPrice?.toString(),
-                minBedrooms: filters.minBedrooms?.toString(),
-                minBathrooms: filters.minBathrooms?.toString(),
-                sort: filters.sort
-              }).filter(([, v]) => v !== undefined) as [string, string][]
-            ).toString()}`}
-            className="px-3 py-1.5 text-sm border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition-colors"
-          >
-            Exportar CSV
-          </a>
-          <a
-            href="/properties/new"
-            className="px-4 py-2 text-sm bg-slate-900 text-white rounded-md hover:bg-slate-700 transition-colors"
-          >
-            + Nueva
-          </a>
+          {role !== "viewer" && (
+            <a
+              href={`/api/properties/export?${new URLSearchParams(
+                Object.entries({
+                  q: filters.q,
+                  city: filters.city,
+                  type: filters.type,
+                  operation: filters.operation,
+                  status: filters.status,
+                  minPrice: filters.minPrice?.toString(),
+                  maxPrice: filters.maxPrice?.toString(),
+                  minBedrooms: filters.minBedrooms?.toString(),
+                  minBathrooms: filters.minBathrooms?.toString(),
+                  sort: filters.sort
+                }).filter(([, v]) => v !== undefined) as [string, string][]
+              ).toString()}`}
+              className="px-3 py-1.5 text-sm border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition-colors"
+            >
+              Exportar CSV
+            </a>
+          )}
+          {role !== "viewer" && (
+            <a
+              href="/properties/new"
+              className="px-4 py-2 text-sm bg-slate-900 text-white rounded-md hover:bg-slate-700 transition-colors"
+            >
+              + Nueva
+            </a>
+          )}
         </div>
       </div>
 
@@ -150,11 +154,11 @@ export function PropertiesClient() {
         ) : view === "grid" ? (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {properties.map((p) => (
-              <PropertyCard key={p.id} property={p} />
+              <PropertyCard key={p.id} property={p} role={role} />
             ))}
           </div>
         ) : (
-          <PropertyTable properties={properties} />
+          <PropertyTable properties={properties} role={role} />
         )}
       </div>
 

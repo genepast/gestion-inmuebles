@@ -1,6 +1,7 @@
 import { RawApiResponseSchema, type RawExternalProperty } from "./types";
 
-const EXTERNAL_API_URL = "https://api.sampleapis.com/rentals/rentals";
+const EXTERNAL_API_URL =
+  process.env.EXTERNAL_API_URL ?? "https://api.sampleapis.com/rentals/rentals";
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;

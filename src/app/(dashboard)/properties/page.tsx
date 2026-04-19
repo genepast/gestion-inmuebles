@@ -1,8 +1,22 @@
 import { Suspense } from "react";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PropertiesClient } from "@/features/properties/components/PropertiesClient";
 import { PropertiesGridSkeleton } from "@/features/properties/components/PropertySkeletons";
 
-export default function PropertiesListPage() {
+export default async function PropertiesListPage() {
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let role = "viewer";
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profile?.role === "admin" || profile?.role === "agent") role = profile.role;
+  }
+
   return (
     <Suspense
       fallback={
@@ -19,7 +33,7 @@ export default function PropertiesListPage() {
         </div>
       }
     >
-      <PropertiesClient />
+      <PropertiesClient role={role} />
     </Suspense>
   );
 }
