@@ -1,13 +1,5 @@
 "use client";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { STATUS_LABELS } from "@/features/properties/utils";
 import type { PropertyStatus } from "@/features/properties/types";
 import type { StatusCount } from "../types";
@@ -26,23 +18,32 @@ interface Props {
 }
 
 export function StatusDistributionChart({ data }: Props) {
-  const chartData = data.map((d) => ({
-    ...d,
-    label: STATUS_LABELS[d.status as PropertyStatus] ?? d.status
-  }));
+  const chartData = data
+    .filter((d) => d.count > 0)
+    .map((d) => ({
+      ...d,
+      name: STATUS_LABELS[d.status as PropertyStatus] ?? d.status
+    }));
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
-      <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-        <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-        <Tooltip formatter={(v) => [v, "Propiedades"]} />
-        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+    <ResponsiveContainer width="100%" height={220}>
+      <PieChart>
+        <Pie
+          data={chartData}
+          dataKey="count"
+          nameKey="name"
+          cx="50%"
+          cy="45%"
+          outerRadius={75}
+          labelLine={false}
+        >
           {chartData.map((entry) => (
             <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? "#94a3b8"} />
           ))}
-        </Bar>
-      </BarChart>
+        </Pie>
+        <Tooltip formatter={(v, name) => [v, name]} />
+        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+      </PieChart>
     </ResponsiveContainer>
   );
 }

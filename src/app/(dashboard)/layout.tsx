@@ -37,13 +37,13 @@ export default async function DashboardLayout({
 
       {/* Mobile nav */}
       <nav className="md:hidden border-b border-slate-200 bg-white px-2 py-1 overflow-x-auto">
-        <NavLinks orientation="horizontal" />
+        <NavLinks orientation="horizontal" role={role} />
       </nav>
 
       <div className="flex flex-1">
         {/* Desktop sidebar */}
         <aside className="hidden md:flex flex-col w-52 shrink-0 border-r border-slate-200 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-3">
-          <NavLinks orientation="vertical" />
+          <NavLinks orientation="vertical" role={role} />
           {role === "admin" && (
             <div className="mt-auto pt-3 border-t border-slate-100">
               <SyncTrigger />

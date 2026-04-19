@@ -1,5 +1,5 @@
 function SkeletonBox({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-slate-200 rounded-lg ${className}`} />;
+  return <div className={`animate-pulse bg-slate-200 rounded-xl ${className}`} />;
 }
 
 export function DashboardSkeleton() {
@@ -14,7 +14,9 @@ export function DashboardSkeleton() {
         <SkeletonBox className="h-64" />
         <SkeletonBox className="h-64" />
       </div>
+      <SkeletonBox className="h-56" />
       <SkeletonBox className="h-64" />
+      <SkeletonBox className="h-52" />
     </div>
   );
 }

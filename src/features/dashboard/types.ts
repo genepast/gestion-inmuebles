@@ -11,7 +11,25 @@ export interface TypeCount {
 export interface WeeklyIncome {
   week: string;
   label: string;
-  amount: number;
+  usd: number;
+  ars: number;
+}
+
+export interface CityAvgPrice {
+  city: string;
+  avg: number;
+  count: number;
+}
+
+export interface RecentProperty {
+  id: string;
+  title: string;
+  property_type: string;
+  status: string;
+  price_amount: number;
+  price_currency: string;
+  city: string | null;
+  created_at: string;
 }
 
 export interface DashboardMetrics {
@@ -19,4 +37,7 @@ export interface DashboardMetrics {
   byStatus: StatusCount[];
   byType: TypeCount[];
   weeklyIncome: WeeklyIncome[];
+  avgPriceByCityUsd: CityAvgPrice[];
+  avgPriceByCityArs: CityAvgPrice[];
+  recentProperties: RecentProperty[];
 }

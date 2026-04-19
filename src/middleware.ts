@@ -69,14 +69,6 @@ export async function middleware(request: NextRequest) {
     return withCookies(NextResponse.next());
   }
 
-  // Si ya está autenticado, no tiene sentido quedarse en /login o /register
-  if (isAuthRoute) {
-    const target = request.nextUrl.clone();
-    target.pathname = "/";
-    target.search = "";
-    return withCookies(NextResponse.redirect(target));
-  }
-
   // 3) Leer rol del perfil. La creación del perfil la maneja un trigger de DB en auth.users.
   let role: AppRole = "viewer";
 
@@ -94,7 +86,25 @@ export async function middleware(request: NextRequest) {
     // Si RLS aún no está configurada, protegemos como viewer por defecto.
   }
 
-  // 4) Protección por rol: solo admin/agent pueden crear o editar
+  // Si ya está autenticado, no tiene sentido quedarse en /login o /register.
+  // Viewers van al listado; admin/agent al dashboard.
+  if (isAuthRoute) {
+    const target = request.nextUrl.clone();
+    target.pathname = role === "viewer" ? "/properties" : "/";
+    target.search = "";
+    return withCookies(NextResponse.redirect(target));
+  }
+
+  // 4) Viewers no pueden acceder al dashboard ni a settings
+  const isViewerBlocked = pathname === "/" || pathname === "/settings";
+  if (role === "viewer" && isViewerBlocked) {
+    const target = request.nextUrl.clone();
+    target.pathname = "/properties";
+    target.search = "";
+    return withCookies(NextResponse.redirect(target));
+  }
+
+  // 5) Solo admin/agent pueden crear o editar
   if (isEditOrCreateRoute(pathname) && role === "viewer") {
     const target = request.nextUrl.clone();
     target.pathname = "/properties";

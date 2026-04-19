@@ -26,14 +26,16 @@ const NAV_ITEMS = [
 
 interface Props {
   orientation?: "vertical" | "horizontal";
+  role?: string;
 }
 
-export function NavLinks({ orientation = "vertical" }: Props) {
+export function NavLinks({ orientation = "vertical", role }: Props) {
   const pathname = usePathname();
+  const items = role === "viewer" ? NAV_ITEMS.filter((item) => item.href !== "/") : NAV_ITEMS;
 
   return (
     <div className={orientation === "vertical" ? "flex flex-col gap-0.5" : "flex gap-0.5"}>
-      {NAV_ITEMS.map(({ href, label, icon }) => {
+      {items.map(({ href, label, icon }) => {
         const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
           <Link
