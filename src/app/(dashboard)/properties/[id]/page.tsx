@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const PropertyMap = dynamic(
+  () => import("@/components/PropertyMap").then((m) => m.PropertyMap),
+  { ssr: false }
+);
 import {
   STATUS_LABELS,
   STATUS_CLASSES,
@@ -159,7 +165,15 @@ export default async function PropertyDetailPage({ params }: Props) {
                 idx === 0 ? "col-span-2 aspect-video" : "aspect-[4/3]"
               }`}
             >
-              <Image src={img.url} alt={`Imagen ${idx + 1}`} fill className="object-cover" />
+              <Image
+                src={img.url}
+                alt={`Imagen ${idx + 1}`}
+                fill
+                sizes={idx === 0 ? "(max-width: 640px) 100vw, 66vw" : "(max-width: 640px) 50vw, 33vw"}
+                quality={65}
+                priority={idx === 0}
+                className="object-cover"
+              />
               {img.is_primary && (
                 <span className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-0.5 rounded">
                   Principal
@@ -211,6 +225,15 @@ export default async function PropertyDetailPage({ params }: Props) {
             {property.neighborhood && <p>{property.neighborhood}</p>}
             <p>{[property.city, property.province, property.country].filter(Boolean).join(", ")}</p>
           </div>
+          {property.latitude != null && property.longitude != null && (
+            <div className="pt-2">
+              <PropertyMap
+                lat={property.latitude}
+                lng={property.longitude}
+                label={property.address ?? property.title}
+              />
+            </div>
+          )}
         </div>
       )}
 

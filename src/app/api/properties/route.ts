@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("properties")
     .select(
-      "id, title, property_type, operation_type, status, price_amount, price_currency, city, province, country, bedrooms, bathrooms, total_area_m2, source, created_at",
+      "id, title, property_type, operation_type, status, price_amount, price_currency, city, province, country, bedrooms, bathrooms, total_area_m2, source, created_at, property_images(storage_path, is_primary, position)",
       { count: "exact" }
     );
 
@@ -59,8 +59,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const items = (data ?? []).map((p) => {
+    const images = (p.property_images ?? []) as { storage_path: string; is_primary: boolean | null; position: number }[];
+    const primary = images.find((i) => i.is_primary) ?? images.sort((a, b) => a.position - b.position)[0];
+    const primary_image_url = primary
+      ? supabase.storage.from("property-images").getPublicUrl(primary.storage_path).data.publicUrl
+      : null;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { property_images, ...rest } = p;
+    return { ...rest, primary_image_url };
+  });
+
   return NextResponse.json({
-    data: data ?? [],
+    data: items,
     total: count ?? 0,
     page,
     pageSize,

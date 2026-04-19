@@ -153,8 +153,8 @@ export function PropertiesClient({ role = "viewer" }: { role?: string }) {
           </div>
         ) : view === "grid" ? (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {properties.map((p) => (
-              <PropertyCard key={p.id} property={p} role={role} />
+            {properties.map((p, idx) => (
+              <PropertyCard key={p.id} property={p} role={role} priority={idx === 0} />
             ))}
           </div>
         ) : (

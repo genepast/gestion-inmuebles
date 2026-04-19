@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { PropertyListItem, PropertyStatus, PropertyType, OperationType } from "../types";
 import {
   formatPrice,
@@ -11,9 +12,10 @@ import {
 interface Props {
   property: PropertyListItem;
   role?: string;
+  priority?: boolean;
 }
 
-export function PropertyCard({ property, role = "viewer" }: Props) {
+export function PropertyCard({ property, role = "viewer", priority = false }: Props) {
   const statusClass =
     STATUS_CLASSES[property.status as PropertyStatus] ?? "bg-slate-100 text-slate-700";
   const statusLabel = STATUS_LABELS[property.status as PropertyStatus] ?? property.status;
@@ -25,10 +27,24 @@ export function PropertyCard({ property, role = "viewer" }: Props) {
   return (
     <div className="group/card relative rounded-lg border border-slate-200 overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all">
       <Link href={`/properties/${property.id}`} className="block">
-        <div className="h-44 bg-slate-100 flex items-center justify-center">
-          <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">
-            {typeLabel}
-          </span>
+        <div className="relative h-44 bg-slate-100">
+          {property.primary_image_url ? (
+            <Image
+              src={property.primary_image_url}
+              alt={property.title}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              quality={65}
+              priority={priority}
+              className="object-cover"
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">
+                {typeLabel}
+              </span>
+            </div>
+          )}
         </div>
         <div className="p-4 space-y-2">
           <div className="flex items-start justify-between gap-2">

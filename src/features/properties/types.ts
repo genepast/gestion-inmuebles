@@ -41,6 +41,7 @@ export interface PropertyListItem {
   total_area_m2: number | null;
   source: string;
   created_at: string | null;
+  primary_image_url: string | null;
 }
 
 export type SortOption = "created_at:desc" | "price_amount:asc" | "price_amount:desc" | "total_area_m2:desc";

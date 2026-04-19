@@ -1,7 +1,20 @@
 /** @type {import("next").NextConfig} */
 const isDev = process.env.NODE_ENV === "development";
 
+const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+  : "*.supabase.co";
+
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: supabaseHostname,
+        pathname: "/storage/v1/object/public/**"
+      }
+    ]
+  },
   async headers() {
     const csp = [
       "default-src 'self'",

@@ -13,6 +13,7 @@ import {
   OPERATION_TYPE_LABELS,
   STATUS_LABELS
 } from "../utils";
+import { geocodeAddress } from "@/lib/geocoding";
 
 interface PropertyImage {
   id: string;
@@ -108,12 +109,16 @@ export function PropertyForm({ property }: Props) {
   const updateMutation = useUpdateProperty();
   const [serverError, setServerError] = useState<string | null>(null);
   const [imageEntries, setImageEntries] = useState<ImageEntry[]>([]);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodeStatus, setGeocodeStatus] = useState<"ok" | "error" | null>(null);
 
   // useForm without a type param to avoid TS2719 resolver type conflict (RHF v7 + @hookform/resolvers v5 + Zod v4 transform schemas).
   // zodResolver still validates on every change; we re-parse in onSubmit to get the typed output.
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting }
   } = useForm({
     resolver: zodResolver(propertyFormSchema),
@@ -181,6 +186,21 @@ export function PropertyForm({ property }: Props) {
   });
 
   const isLoading = isSubmitting || createMutation.isPending || updateMutation.isPending;
+
+  async function handleGeocode() {
+    setIsGeocoding(true);
+    setGeocodeStatus(null);
+    const { address, city, province, country } = getValues();
+    const result = await geocodeAddress({ address, city, province, country });
+    if (result) {
+      setValue("latitude", result.lat);
+      setValue("longitude", result.lng);
+      setGeocodeStatus("ok");
+    } else {
+      setGeocodeStatus("error");
+    }
+    setIsGeocoding(false);
+  }
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
@@ -290,26 +310,44 @@ export function PropertyForm({ property }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Latitud</label>
-            <input
-              {...register("latitude")}
-              type="number"
-              step="any"
-              className={inputClass}
-              placeholder="-34.603"
-            />
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Latitud</label>
+              <input
+                {...register("latitude")}
+                type="number"
+                step="any"
+                className={inputClass}
+                placeholder="-34.603"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Longitud</label>
+              <input
+                {...register("longitude")}
+                type="number"
+                step="any"
+                className={inputClass}
+                placeholder="-58.381"
+              />
+            </div>
           </div>
-          <div>
-            <label className={labelClass}>Longitud</label>
-            <input
-              {...register("longitude")}
-              type="number"
-              step="any"
-              className={inputClass}
-              placeholder="-58.381"
-            />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGeocode}
+              disabled={isGeocoding}
+              className="text-xs px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              {isGeocoding ? "Geocodificando…" : "Obtener coordenadas desde dirección"}
+            </button>
+            {geocodeStatus === "ok" && (
+              <span className="text-xs text-green-600">Coordenadas actualizadas</span>
+            )}
+            {geocodeStatus === "error" && (
+              <span className="text-xs text-red-600">No se encontró la dirección</span>
+            )}
           </div>
         </div>
       </div>
