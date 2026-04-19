@@ -59,9 +59,9 @@ npm test
 
 | Rol | Email | Contraseña |
 |-----|-------|------------|
-| Admin | admin@test.com | Admin1234! |
-| Agent | agent@test.com | Agent1234! |
-| Viewer | viewer@test.com | Viewer1234! |
+| Admin | admin@test.com | password123 |
+| Agent | agent@test.com | password123 |
+| Viewer | viewer@test.com | password123 |
 
 > Los roles se asignan manualmente en Supabase → Table Editor → `profiles`.
 
