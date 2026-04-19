@@ -73,6 +73,7 @@ export function useUpdateProperty() {
                     price_currency: values.price_currency,
                     city: values.city ?? p.city,
                     province: values.province ?? p.province,
+                    country: values.country ?? p.country,
                     bedrooms: values.bedrooms,
                     bathrooms: values.bathrooms,
                     total_area_m2: values.total_area_m2 ?? p.total_area_m2
