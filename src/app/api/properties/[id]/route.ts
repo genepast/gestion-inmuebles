@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { propertyApiSchema } from "@/features/properties/schemas/property.schema";
 import {
@@ -6,6 +7,11 @@ import {
   StatusTransitionError
 } from "@/features/properties/services/status.service";
 import type { PropertyStatus } from "@/features/properties/types";
+
+const statusPatchSchema = z.object({
+  status: z.enum(["draft", "available", "reserved", "sold", "rented", "cancelled"]),
+  reason: z.string().optional()
+});
 
 export async function GET(
   _request: NextRequest,
@@ -34,15 +40,6 @@ export async function GET(
 
   return NextResponse.json(data);
 }
-
-const VALID_STATUSES = new Set<string>([
-  "draft",
-  "available",
-  "reserved",
-  "sold",
-  "rented",
-  "cancelled"
-]);
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -79,28 +76,81 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   if (newStatus && newStatus !== current.status) {
-    if (!VALID_STATUSES.has(newStatus)) {
-      return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
-    }
     try {
       await transitionPropertyStatus(params.id, newStatus as PropertyStatus, user.id, reason);
     } catch (err) {
       if (err instanceof StatusTransitionError) {
         return NextResponse.json({ error: err.message }, { status: 422 });
       }
-      throw err;
+      const message = err instanceof Error ? err.message : "Error al cambiar estado";
+      return NextResponse.json({ error: message }, { status: 403 });
     }
+  }
+
+  const { error: updateError } = await supabase
+    .from("properties")
+    .update({ ...rest, updated_at: new Date().toISOString() })
+    .eq("id", params.id);
+
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  const { data, error: refetchError } = await supabase
+    .from("properties")
+    .select()
+    .eq("id", params.id)
+    .single();
+
+  if (refetchError || !data) {
+    return NextResponse.json({ error: "Propiedad no encontrada" }, { status: 404 });
+  }
+
+  return NextResponse.json(data);
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  const parsed = statusPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const { status: newStatus, reason } = parsed.data;
+
+  try {
+    await transitionPropertyStatus(params.id, newStatus as PropertyStatus, user.id, reason);
+  } catch (err) {
+    if (err instanceof StatusTransitionError) {
+      return NextResponse.json({ error: err.message }, { status: 422 });
+    }
+    const message = err instanceof Error ? err.message : "Error al cambiar estado";
+    return NextResponse.json({ error: message }, { status: 403 });
   }
 
   const { data, error } = await supabase
     .from("properties")
-    .update({ ...rest, updated_at: new Date().toISOString() })
-    .eq("id", params.id)
     .select()
+    .eq("id", params.id)
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !data) {
+    return NextResponse.json({ error: "Propiedad no encontrada" }, { status: 404 });
   }
 
   return NextResponse.json(data);

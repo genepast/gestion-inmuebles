@@ -64,12 +64,16 @@ export async function transitionPropertyStatus(
     throw new StatusTransitionError(fromStatus, toStatus);
   }
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from("properties")
     .update({ status: toStatus, updated_at: new Date().toISOString() })
-    .eq("id", propertyId);
+    .eq("id", propertyId)
+    .select("id");
 
   if (updateError) throw updateError;
+  if (!updated || updated.length === 0) {
+    throw new Error("No autorizado para modificar esta propiedad");
+  }
 
   const { error: historyError } = await supabase
     .from("property_status_history")

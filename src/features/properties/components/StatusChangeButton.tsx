@@ -34,26 +34,9 @@ const TRANSITION_STYLES: Partial<Record<PropertyStatus, string>> = {
 interface Props {
   propertyId: string;
   currentStatus: PropertyStatus;
-  currentTitle: string;
-  currentPrice: number;
-  currentCurrency: string;
-  currentType: string;
-  currentOperation: string;
-  currentBedrooms: number;
-  currentBathrooms: number;
 }
 
-export function StatusChangeButton({
-  propertyId,
-  currentStatus,
-  currentTitle,
-  currentPrice,
-  currentCurrency,
-  currentType,
-  currentOperation,
-  currentBedrooms,
-  currentBathrooms
-}: Props) {
+export function StatusChangeButton({ propertyId, currentStatus }: Props) {
   const router = useRouter();
   const [pending, setPending] = useState<PropertyStatus | null>(null);
   const [reason, setReason] = useState("");
@@ -69,21 +52,11 @@ export function StatusChangeButton({
     setError(null);
     try {
       const res = await fetch(`/api/properties/${propertyId}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: pending,
-          reason: reason.trim() || undefined,
-          title: currentTitle,
-          price_amount: currentPrice,
-          price_currency: currentCurrency,
-          property_type: currentType,
-          operation_type: currentOperation,
-          bedrooms: currentBedrooms,
-          bathrooms: currentBathrooms,
-          has_pool: false,
-          has_garden: false,
-          has_balcony: false
+          reason: reason.trim() || undefined
         })
       });
       const data = (await res.json()) as { error?: string };

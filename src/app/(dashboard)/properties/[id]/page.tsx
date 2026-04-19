@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -16,6 +15,7 @@ import {
   formatPrice
 } from "@/features/properties/utils";
 import { StatusChangeButton } from "@/features/properties/components/StatusChangeButton";
+import { PropertyImageCarousel } from "@/features/properties/components/PropertyImageCarousel";
 import type { PropertyStatus, PropertyType, OperationType } from "@/features/properties/types";
 
 interface Props {
@@ -83,6 +83,19 @@ export default async function PropertyDetailPage({ params }: Props) {
   const history = [...(property.property_status_history ?? [])].sort(
     (a, b) => new Date(a.changed_at ?? 0).getTime() - new Date(b.changed_at ?? 0).getTime()
   );
+
+  const agentIds = [...new Set(history.map((h) => h.changed_by).filter(Boolean))] as string[];
+  const agentNameMap = new Map<string, string>();
+  if (agentIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", agentIds);
+    for (const p of profiles ?? []) {
+      agentNameMap.set(p.id, p.full_name ?? "Usuario desconocido");
+    }
+  }
+
   const imageUrls = images.map((img) => ({
     ...img,
     url: supabase.storage.from("property-images").getPublicUrl(img.storage_path).data.publicUrl
@@ -145,42 +158,13 @@ export default async function PropertyDetailPage({ params }: Props) {
         <StatusChangeButton
           propertyId={property.id}
           currentStatus={property.status as PropertyStatus}
-          currentTitle={property.title}
-          currentPrice={property.price_amount}
-          currentCurrency={property.price_currency}
-          currentType={property.property_type}
-          currentOperation={property.operation_type}
-          currentBedrooms={property.bedrooms}
-          currentBathrooms={property.bathrooms}
         />
       )}
 
       {/* Images */}
       {imageUrls.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {imageUrls.map((img, idx) => (
-            <div
-              key={img.id}
-              className={`relative overflow-hidden rounded-lg bg-slate-100 ${
-                idx === 0 ? "col-span-2 aspect-video" : "aspect-[4/3]"
-              }`}
-            >
-              <Image
-                src={img.url}
-                alt={`Imagen ${idx + 1}`}
-                fill
-                sizes={idx === 0 ? "(max-width: 640px) 100vw, 66vw" : "(max-width: 640px) 50vw, 33vw"}
-                quality={65}
-                priority={idx === 0}
-                className="object-cover"
-              />
-              {img.is_primary && (
-                <span className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-0.5 rounded">
-                  Principal
-                </span>
-              )}
-            </div>
-          ))}
+        <div className="space-y-2">
+          <PropertyImageCarousel images={imageUrls} />
         </div>
       ) : (
         <div className="h-48 rounded-lg bg-slate-100 flex items-center justify-center">
@@ -249,43 +233,70 @@ export default async function PropertyDetailPage({ params }: Props) {
 
       {/* Status history */}
       {history.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <h2 className="text-xs font-medium text-slate-500 uppercase tracking-wider">
             Historial de estado
           </h2>
-          <div className="space-y-2">
-            {history.map((entry) => (
-              <div key={entry.id} className="flex items-start gap-3 text-sm">
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded font-medium ${STATUS_CLASSES[entry.from_status as PropertyStatus] ?? "bg-slate-100 text-slate-600"}`}
-                  >
-                    {STATUS_LABELS[entry.from_status as PropertyStatus] ?? entry.from_status ?? "—"}
-                  </span>
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
-                  </svg>
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded font-medium ${STATUS_CLASSES[entry.to_status as PropertyStatus] ?? "bg-slate-100 text-slate-600"}`}
-                  >
-                    {STATUS_LABELS[entry.to_status as PropertyStatus] ?? entry.to_status}
-                  </span>
-                </div>
-                <div className="text-xs text-slate-400 mt-0.5">
-                  {formatDate(entry.changed_at)}
-                  {entry.reason && (
-                    <span className="ml-2 text-slate-500 italic">&ldquo;{entry.reason}&rdquo;</span>
-                  )}
-                </div>
-              </div>
-            ))}
+          <div className="relative">
+            {/* Vertical line */}
+            <div className="absolute left-[11px] top-3 bottom-3 w-px bg-slate-200" />
+
+            <div className="space-y-0">
+              {history.map((entry, idx) => {
+                const agentName = entry.changed_by
+                  ? (agentNameMap.get(entry.changed_by) ?? "Usuario desconocido")
+                  : "Sistema";
+                const isLast = idx === history.length - 1;
+                return (
+                  <div key={entry.id} className="relative flex gap-4 pb-6 last:pb-0">
+                    {/* Dot */}
+                    <div className={`relative z-10 mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                      isLast
+                        ? "border-slate-900 bg-white"
+                        : "border-slate-300 bg-white"
+                    }`}>
+                      <div className={`h-2 w-2 rounded-full ${isLast ? "bg-slate-900" : "bg-slate-300"}`} />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 pt-0.5 space-y-1.5">
+                      {/* Badges row */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {entry.from_status && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_CLASSES[entry.from_status as PropertyStatus] ?? "bg-slate-100 text-slate-600"}`}>
+                            {STATUS_LABELS[entry.from_status as PropertyStatus] ?? entry.from_status}
+                          </span>
+                        )}
+                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400 shrink-0">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
+                        </svg>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_CLASSES[entry.to_status as PropertyStatus] ?? "bg-slate-100 text-slate-600"}`}>
+                          {STATUS_LABELS[entry.to_status as PropertyStatus] ?? entry.to_status}
+                        </span>
+                      </div>
+
+                      {/* Agent + date */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a5.75 5.75 0 11-11.5 0 5.75 5.75 0 0111.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0110 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                          </svg>
+                          <span className="font-medium text-slate-700">{agentName}</span>
+                        </span>
+                        <span className="text-slate-400">{formatDate(entry.changed_at)}</span>
+                      </div>
+
+                      {/* Reason */}
+                      {entry.reason && (
+                        <p className="text-xs text-slate-500 italic bg-slate-50 rounded px-2 py-1 border border-slate-100">
+                          &ldquo;{entry.reason}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
