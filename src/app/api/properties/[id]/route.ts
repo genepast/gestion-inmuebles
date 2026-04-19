@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { status: newStatus, reason, ...rest } = parsed.data;
+  const { status: newStatus, reason, assigned_agent_id, ...rest } = parsed.data;
 
   const { data: current, error: fetchError } = await supabase
     .from("properties")
@@ -87,9 +87,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const updatePayload = {
+    ...rest,
+    updated_at: new Date().toISOString(),
+    ...(profile?.role === "admin" ? { assigned_agent_id: assigned_agent_id ?? null } : {})
+  };
+
   const { error: updateError } = await supabase
     .from("properties")
-    .update({ ...rest, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq("id", params.id);
 
   if (updateError) {

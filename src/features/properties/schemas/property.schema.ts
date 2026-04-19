@@ -70,6 +70,7 @@ export const propertyFormSchema = z.object({
   has_pool: z.boolean(),
   has_garden: z.boolean(),
   has_balcony: z.boolean(),
+  assigned_agent_id: z.string().uuid().nullable().optional(),
 });
 
 export type PropertyFormValues = z.infer<typeof propertyFormSchema>;

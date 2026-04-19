@@ -47,11 +47,19 @@ interface PropertyWithImages {
   has_pool: boolean | null;
   has_garden: boolean | null;
   has_balcony: boolean | null;
+  assigned_agent_id: string | null;
   property_images: PropertyImage[];
+}
+
+interface Agent {
+  id: string;
+  full_name: string | null;
 }
 
 interface Props {
   property?: PropertyWithImages;
+  agents?: Agent[];
+  isAdmin?: boolean;
 }
 
 async function syncImages(propertyId: string, images: ImageEntry[]) {
@@ -103,12 +111,13 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function PropertyForm({ property }: Props) {
+export function PropertyForm({ property, agents = [], isAdmin = false }: Props) {
   const router = useRouter();
   const createMutation = useCreateProperty();
   const updateMutation = useUpdateProperty();
   const [serverError, setServerError] = useState<string | null>(null);
   const [imageEntries, setImageEntries] = useState<ImageEntry[]>([]);
+  const [imagesDirty, setImagesDirty] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeStatus, setGeocodeStatus] = useState<"ok" | "error" | null>(null);
 
@@ -146,7 +155,8 @@ export function PropertyForm({ property }: Props) {
           year_built: property.year_built ?? undefined,
           has_pool: property.has_pool ?? false,
           has_garden: property.has_garden ?? false,
-          has_balcony: property.has_balcony ?? false
+          has_balcony: property.has_balcony ?? false,
+          assigned_agent_id: property.assigned_agent_id ?? null
         }
       : {
           property_type: "apartment",
@@ -158,7 +168,8 @@ export function PropertyForm({ property }: Props) {
           bathrooms: 0,
           has_pool: false,
           has_garden: false,
-          has_balcony: false
+          has_balcony: false,
+          assigned_agent_id: null
         }
   });
 
@@ -173,7 +184,7 @@ export function PropertyForm({ property }: Props) {
     try {
       if (property) {
         await updateMutation.mutateAsync({ id: property.id, values });
-        await syncImages(property.id, imageEntries);
+        if (imagesDirty) await syncImages(property.id, imageEntries);
       } else {
         const created = await createMutation.mutateAsync(values);
         await syncImages(created.id, imageEntries);
@@ -279,6 +290,24 @@ export function PropertyForm({ property }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Agente asignado — solo admin */}
+      {isAdmin && (
+        <div className="space-y-4">
+          <SectionTitle>Asignación</SectionTitle>
+          <div>
+            <label className={labelClass}>Agente asignado</label>
+            <select {...register("assigned_agent_id")} className={inputClass}>
+              <option value="">Sin asignar</option>
+              {agents.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.full_name ?? a.id}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Ubicación */}
       <div className="space-y-4">
@@ -430,7 +459,7 @@ export function PropertyForm({ property }: Props) {
         <ImageUploader
           propertyId={property?.id}
           initialImages={property?.property_images ?? []}
-          onChange={setImageEntries}
+          onChange={(entries) => { setImagesDirty(true); setImageEntries(entries); }}
         />
         {!property?.id && imageEntries.some((i) => !i.isExisting && i.file) && (
           <p className="text-xs text-slate-500">

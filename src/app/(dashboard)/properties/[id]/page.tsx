@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const PropertyMap = dynamic(
   () => import("@/components/PropertyMap").then((m) => m.PropertyMap),
@@ -84,17 +85,28 @@ export default async function PropertyDetailPage({ params }: Props) {
     (a, b) => new Date(a.changed_at ?? 0).getTime() - new Date(b.changed_at ?? 0).getTime()
   );
 
-  const agentIds = [...new Set(history.map((h) => h.changed_by).filter(Boolean))] as string[];
+  const profileIdsToResolve = [
+    ...new Set([
+      ...history.map((h) => h.changed_by).filter(Boolean),
+      property.assigned_agent_id ?? null
+    ].filter(Boolean))
+  ] as string[];
+
   const agentNameMap = new Map<string, string>();
-  if (agentIds.length > 0) {
-    const { data: profiles } = await supabase
+  if (profileIdsToResolve.length > 0) {
+    const adminClient = createSupabaseAdminClient();
+    const { data: profiles } = await adminClient
       .from("profiles")
       .select("id, full_name")
-      .in("id", agentIds);
+      .in("id", profileIdsToResolve);
     for (const p of profiles ?? []) {
       agentNameMap.set(p.id, p.full_name ?? "Usuario desconocido");
     }
   }
+
+  const assignedAgentName = property.assigned_agent_id
+    ? (agentNameMap.get(property.assigned_agent_id) ?? "Usuario desconocido")
+    : null;
 
   const imageUrls = images.map((img) => ({
     ...img,
@@ -303,10 +315,25 @@ export default async function PropertyDetailPage({ params }: Props) {
 
       {/* Metadata */}
       {role !== "viewer" && (
-        <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-400">
-          <span>Creado: {formatDate(property.created_at)}</span>
-          <span>Actualizado: {formatDate(property.updated_at)}</span>
-          {property.external_id && <span>ID externo: {property.external_id}</span>}
+        <div className="pt-4 border-t border-slate-100 space-y-2">
+          {assignedAgentName && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Agente asignado
+              </span>
+              <span className="flex items-center gap-1.5 text-sm text-slate-700">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a5.75 5.75 0 11-11.5 0 5.75 5.75 0 0111.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0110 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+                {assignedAgentName}
+              </span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-4 text-xs text-slate-400">
+            <span>Creado: {formatDate(property.created_at)}</span>
+            <span>Actualizado: {formatDate(property.updated_at)}</span>
+            {property.external_id && <span>ID externo: {property.external_id}</span>}
+          </div>
         </div>
       )}
     </section>

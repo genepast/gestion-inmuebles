@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { reason: _reason, ...insertData } = parsed.data;
+  const { reason: _reason, assigned_agent_id: formAgentId, ...propertyData } = parsed.data;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -110,11 +110,12 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .maybeSingle();
 
-  const assigned_agent_id = profile?.role === "agent" ? user.id : null;
+  const assigned_agent_id =
+    profile?.role === "agent" ? user.id : (formAgentId ?? null);
 
   const { data, error } = await supabase
     .from("properties")
-    .insert({ ...insertData, created_by: user.id, source: "manual", assigned_agent_id })
+    .insert({ ...propertyData, created_by: user.id, source: "manual", assigned_agent_id })
     .select()
     .single();
 

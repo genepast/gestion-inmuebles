@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { PropertyForm } from "@/features/properties/components/PropertyForm";
 
 interface Props {
@@ -9,13 +10,34 @@ interface Props {
 export default async function PropertyEditPage({ params }: Props) {
   const supabase = createSupabaseServerClient();
 
-  const { data: property, error } = await supabase
-    .from("properties")
-    .select("*, property_images(*)")
-    .eq("id", params.id)
-    .single();
+  const [{ data: property, error }, { data: authData }] = await Promise.all([
+    supabase.from("properties").select("*, property_images(*)").eq("id", params.id).single(),
+    supabase.auth.getUser()
+  ]);
 
   if (error || !property) notFound();
+
+  let isAdmin = false;
+  let agents: { id: string; full_name: string | null }[] = [];
+
+  if (authData.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", authData.user.id)
+      .maybeSingle();
+
+    isAdmin = profile?.role === "admin";
+
+    if (isAdmin) {
+      const adminClient = createSupabaseAdminClient();
+      const { data } = await adminClient
+        .from("profiles")
+        .select("id, full_name")
+        .eq("role", "agent");
+      agents = data ?? [];
+    }
+  }
 
   return (
     <section className="space-y-6">
@@ -23,7 +45,7 @@ export default async function PropertyEditPage({ params }: Props) {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Editar propiedad</h1>
         <p className="mt-1 text-sm text-slate-500 line-clamp-1">{property.title}</p>
       </div>
-      <PropertyForm property={property} />
+      <PropertyForm property={property} isAdmin={isAdmin} agents={agents} />
     </section>
   );
 }
