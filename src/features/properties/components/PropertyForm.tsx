@@ -65,6 +65,11 @@ interface Props {
 async function syncImages(propertyId: string, images: ImageEntry[]) {
   const supabase = createSupabaseBrowserClient();
 
+  const { data: existingInDb } = await supabase
+    .from("property_images")
+    .select("storage_path")
+    .eq("property_id", propertyId);
+
   const resolved = await Promise.all(
     images.map(async (img, position) => {
       if (!img.isExisting && img.file) {
@@ -88,6 +93,16 @@ async function syncImages(propertyId: string, images: ImageEntry[]) {
     position: number;
     is_primary: boolean;
   }[];
+
+  if (existingInDb && existingInDb.length > 0) {
+    const keptPaths = new Set(rows.map((r) => r.storage_path));
+    const orphaned = existingInDb
+      .map((r) => r.storage_path)
+      .filter((p) => !keptPaths.has(p));
+    if (orphaned.length > 0) {
+      await supabase.storage.from("property-images").remove(orphaned);
+    }
+  }
 
   await supabase.from("property_images").delete().eq("property_id", propertyId);
 

@@ -117,11 +117,18 @@ export function ImageUploader({ propertyId, initialImages = [], onChange }: Prop
   }
 
   function remove(index: number) {
+    const img = images[index]!;
     const updated = images.filter((_, i) => i !== index);
     if (updated.length > 0 && !updated.some((i) => i.isPrimary)) {
       updated[0]!.isPrimary = true;
     }
     notify(updated);
+    // Delete files uploaded in this session (storagePath set but not yet a DB record)
+    // to avoid orphaned files when the user removes them before saving.
+    if (img.storagePath && !img.isExisting) {
+      const supabase = createSupabaseBrowserClient();
+      void supabase.storage.from("property-images").remove([img.storagePath]);
+    }
   }
 
   function setPrimary(index: number) {
