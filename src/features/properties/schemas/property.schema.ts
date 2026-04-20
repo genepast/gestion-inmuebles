@@ -36,8 +36,8 @@ const nonNegInt = z
   .transform((v): number => toNonNegInt(v));
 
 export const propertyFormSchema = z.object({
-  title: z.string().min(3, "Mínimo 3 caracteres"),
-  description: z.string().optional(),
+  title: z.string().trim().min(3, "Mínimo 3 caracteres"),
+  description: z.string().trim().optional(),
   property_type: z.enum(["apartment", "house", "ph", "land", "commercial", "office"]),
   operation_type: z.enum(["sale", "rent", "temporary_rent"]),
   status: z.enum(["draft", "available", "reserved", "sold", "rented", "cancelled"]),
@@ -48,11 +48,11 @@ export const propertyFormSchema = z.object({
       message: "El precio debe ser mayor a 0"
     }),
   price_currency: z.enum(["USD", "ARS", "EUR"]),
-  country: z.string().optional(),
-  province: z.string().optional(),
-  city: z.string().optional(),
-  neighborhood: z.string().optional(),
-  address: z.string().optional(),
+  country: z.string().trim().optional(),
+  province: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  neighborhood: z.string().trim().optional(),
+  address: z.string().trim().optional(),
   latitude: optNum,
   longitude: optNum,
   bedrooms: nonNegInt,
