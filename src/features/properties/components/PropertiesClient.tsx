@@ -34,7 +34,7 @@ export function PropertiesClient({ role = "viewer" }: { role?: string }) {
     sort: (searchParams.get("sort") as SortOption) ?? undefined
   };
 
-  const { data, isLoading, isFetching, isError } = useProperties(filters);
+  const { data, isLoading, isFetching, isError, refetch } = useProperties(filters);
   const showSkeleton = useDelayedLoading(isLoading);
 
   function toggleView(newView: "grid" | "table") {
@@ -135,8 +135,14 @@ export function PropertiesClient({ role = "viewer" }: { role?: string }) {
       <PropertyFilters />
 
       {isError && (
-        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-          Error al cargar propiedades. Por favor, intentá de nuevo.
+        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between gap-4">
+          <span>Error al cargar propiedades.</span>
+          <button
+            onClick={() => void refetch()}
+            className="shrink-0 px-3 py-1 text-xs font-medium rounded-md bg-red-100 hover:bg-red-200 transition-colors"
+          >
+            Reintentar
+          </button>
         </div>
       )}
 

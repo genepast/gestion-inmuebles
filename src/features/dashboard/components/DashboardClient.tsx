@@ -14,10 +14,21 @@ function formatCompact(n: number) {
 }
 
 export function DashboardClient() {
-  const { data, isPending, isError } = useDashboardMetrics();
+  const { data, isPending, isError, refetch } = useDashboardMetrics();
 
   if (isPending) return <DashboardSkeleton />;
-  if (isError) return <p className="text-sm text-red-600">Error al cargar métricas.</p>;
+  if (isError)
+    return (
+      <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between gap-4">
+        <span>Error al cargar métricas.</span>
+        <button
+          onClick={() => void refetch()}
+          className="shrink-0 px-3 py-1 text-xs font-medium rounded-md bg-red-100 hover:bg-red-200 transition-colors"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
 
   const available = data.byStatus.find((s) => s.status === "available")?.count ?? 0;
   const reserved = data.byStatus.find((s) => s.status === "reserved")?.count ?? 0;
