@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 const mockSingle = vi.fn();
+const mockMaybeSingle = vi.fn();
 const mockGetUser = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: () => ({
     auth: { getUser: mockGetUser },
     from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: mockMaybeSingle }) }),
       insert: () => ({ select: () => ({ single: mockSingle }) })
     })
   })
@@ -54,6 +56,7 @@ describe("POST /api/properties", () => {
 
   it("returns 201 with created property on success", async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    mockMaybeSingle.mockResolvedValue({ data: { role: "agent" } });
     mockSingle.mockResolvedValue({
       data: { id: "prop-1", ...VALID_BODY, source: "manual", created_by: "user-1" },
       error: null
@@ -67,6 +70,7 @@ describe("POST /api/properties", () => {
 
   it("returns 500 when Supabase insert fails", async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    mockMaybeSingle.mockResolvedValue({ data: { role: "agent" } });
     mockSingle.mockResolvedValue({ data: null, error: { message: "db error" } });
     const { POST } = await import("@/app/api/properties/route");
     const res = await POST(makeRequest(VALID_BODY));
