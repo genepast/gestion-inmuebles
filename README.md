@@ -111,3 +111,26 @@ draft → available → reserved → sold
 ```
 
 Las transiciones inválidas (por ejemplo `sold → available`) se rechazan en el backend con un error claro. La UI solo muestra las opciones válidas para cada estado, pero la restricción real vive en el servidor.
+
+## Próximas Mejoras e Iteraciones
+
+Aunque el sistema es plenamente funcional y seguro, se han identificado las siguientes áreas de mejora para elevar la experiencia de usuario y la precisión del negocio:
+
+### 1. Filtrado por Par Divisa-Monto
+**Estado Actual:** El filtrado de precios es puramente numérico, lo que genera colisiones de resultados entre propiedades publicadas en Pesos Argentinos (ARS) y Dólares (USD).
+- **Propuesta:** Acoplar los parámetros `minPrice` y `maxPrice` a un selector de divisa (`currency`) en la interfaz.
+- **Impacto:** Garantiza que los resultados sean homogéneos y evita que el usuario compare valores nominales que representan poderes adquisitivos totalmente distintos.
+
+### 2. Optimización de Feedback en la Autorización
+**Estado Actual:** El sistema implementa seguridad en capas (RLS y Repositories) que bloquea acciones no autorizadas de forma "silenciosa".
+- **Captura de Errores 403:** Mapear excepciones de autorización para disparar notificaciones (Toasts) informativas como: *"No posees permisos para modificar esta propiedad"*.
+- **UI Preventiva:** Implementar lógica en el frontend para ocultar o deshabilitar elementos de edición si el `assigned_agent_id` no coincide con el usuario logueado.
+- **Impacto:** Mejora la experiencia de usuario al transformar un bloqueo de seguridad en una respuesta clara del sistema, alineando la interfaz con las políticas del servidor.
+
+### Roadmap de Funcionalidades Opcionales
+
+Como objetivos de corto plazo, se han proyectado las siguientes implementaciones sugeridas:
+
+- **Modo Oscuro:** Implementación mediante `next-themes` y la variante `dark:` de Tailwind CSS para soporte nativo de preferencias del sistema.
+- **Ficha de Propiedad en PDF:** Generación dinámica de reportes descargables utilizando `react-pdf` para facilitar la exportación de detalles técnicos.
+- **Internacionalización (i18n):** Adopción de `next-intl` para el manejo de rutas por localía y soporte multi-idioma (ES/EN) escalable.
