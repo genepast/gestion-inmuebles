@@ -42,6 +42,10 @@ export async function findProperties(
   if (minBathrooms !== undefined) query = query.gte("bathrooms", minBathrooms);
   if (q) query = query.textSearch("fts", q, { type: "websearch" });
 
+  // Se usa OFFSET/LIMIT en lugar de keyset porque la UI permite saltar a cualquier página
+  // y ordenar por múltiples columnas (precio, área, fecha). Keyset solo es eficiente con
+  // un cursor de columna única y estable; el costo en páginas profundas es aceptable
+  // para un backoffice con volúmenes típicamente menores a 50 páginas.
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   const [sortCol, sortDir] = (sort ?? "created_at:desc").split(":") as [string, string];
