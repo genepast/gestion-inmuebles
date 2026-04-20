@@ -14,6 +14,7 @@ import {
   refetchProperty,
   deleteProperty
 } from "@/features/properties/repositories/property.repository";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import type { PropertyStatus } from "@/features/properties/types";
 
 const statusPatchSchema = z.object({
@@ -50,6 +51,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   if (!user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const rl = checkRateLimit(`property:update:${user.id}`, { max: 60, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intentá de nuevo más tarde." },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
   }
 
   let body: unknown;
@@ -104,6 +113,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   if (!user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const rl = checkRateLimit(`property:update:${user.id}`, { max: 60, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intentá de nuevo más tarde." },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
   }
 
   let body: unknown;

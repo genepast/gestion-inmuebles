@@ -7,6 +7,7 @@ import {
   findUserRole,
   createProperty
 } from "@/features/properties/repositories/property.repository";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -58,6 +59,14 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const rl = checkRateLimit(`property:create:${user.id}`, { max: 60, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intentá de nuevo más tarde." },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
   }
 
   let body: unknown;

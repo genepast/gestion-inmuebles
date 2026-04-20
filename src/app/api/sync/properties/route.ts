@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchExternalProperties } from "@/lib/external-api/client";
@@ -7,6 +7,7 @@ import type { ExternalPropertyDTO } from "@/lib/external-api/types";
 import type { TablesInsert } from "@/lib/supabase/database.types";
 import { findUserRole, findExistingExternalIds, upsertExternalProperties } from "@/features/properties/repositories/property.repository";
 import { createSyncLog, updateSyncLogSuccess, updateSyncLogError } from "@/features/properties/repositories/sync-log.repository";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 function dtoToDbRow(dto: ExternalPropertyDTO): TablesInsert<"properties"> {
   return {
@@ -38,7 +39,16 @@ function dtoToDbRow(dto: ExternalPropertyDTO): TablesInsert<"properties"> {
   };
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = checkRateLimit(`sync:${ip}`, { max: 10, windowMs: 60 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intentá de nuevo más tarde." },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
+  }
+
   const serverClient = createSupabaseServerClient();
   const {
     data: { user },
