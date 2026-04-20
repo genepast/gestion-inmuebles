@@ -68,7 +68,9 @@ export function PropertiesClient({ role = "viewer" }: { role?: string }) {
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
+          <label htmlFor="sort-select" className="sr-only">Ordenar por</label>
           <select
+            id="sort-select"
             value={filters.sort ?? ""}
             onChange={(e) => handleSort(e.target.value)}
             className="px-3 py-1.5 text-sm rounded-md border border-slate-200 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400"

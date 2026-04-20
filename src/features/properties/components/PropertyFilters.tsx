@@ -61,21 +61,27 @@ export function PropertyFilters() {
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <label htmlFor="filter-q" className="sr-only">Buscar propiedades</label>
         <input
+          id="filter-q"
           type="text"
           placeholder="Buscar..."
           value={textValues.q}
           onChange={(e) => handleTextChange("q", e.target.value)}
           className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent"
         />
+        <label htmlFor="filter-city" className="sr-only">Ciudad</label>
         <input
+          id="filter-city"
           type="text"
           placeholder="Ciudad"
           value={textValues.city}
           onChange={(e) => handleTextChange("city", e.target.value)}
           className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent"
         />
+        <label htmlFor="filter-type" className="sr-only">Tipo de propiedad</label>
         <select
+          id="filter-type"
           value={searchParams.get("type") ?? ""}
           onChange={(e) => handleSelectChange("type", e.target.value)}
           className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
@@ -87,7 +93,9 @@ export function PropertyFilters() {
             </option>
           ))}
         </select>
+        <label htmlFor="filter-operation" className="sr-only">Tipo de operación</label>
         <select
+          id="filter-operation"
           value={searchParams.get("operation") ?? ""}
           onChange={(e) => handleSelectChange("operation", e.target.value)}
           className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
@@ -99,7 +107,9 @@ export function PropertyFilters() {
             </option>
           ))}
         </select>
+        <label htmlFor="filter-status" className="sr-only">Estado</label>
         <select
+          id="filter-status"
           value={searchParams.get("status") ?? ""}
           onChange={(e) => handleSelectChange("status", e.target.value)}
           className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
@@ -111,7 +121,9 @@ export function PropertyFilters() {
             </option>
           ))}
         </select>
+        <label htmlFor="filter-bedrooms" className="sr-only">Ambientes mínimos</label>
         <select
+          id="filter-bedrooms"
           value={searchParams.get("minBedrooms") ?? ""}
           onChange={(e) => handleSelectChange("minBedrooms", e.target.value)}
           className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
@@ -123,7 +135,9 @@ export function PropertyFilters() {
             </option>
           ))}
         </select>
+        <label htmlFor="filter-bathrooms" className="sr-only">Baños mínimos</label>
         <select
+          id="filter-bathrooms"
           value={searchParams.get("minBathrooms") ?? ""}
           onChange={(e) => handleSelectChange("minBathrooms", e.target.value)}
           className="px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-slate-700"
@@ -138,16 +152,20 @@ export function PropertyFilters() {
       </div>
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 shrink-0">Precio:</span>
+          <span className="text-xs text-slate-500 shrink-0" aria-hidden="true">Precio:</span>
+          <label htmlFor="filter-min-price" className="sr-only">Precio mínimo</label>
           <input
+            id="filter-min-price"
             type="number"
             placeholder="Mín"
             value={textValues.minPrice}
             onChange={(e) => handleTextChange("minPrice", e.target.value)}
             className="w-28 px-3 py-1.5 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent"
           />
-          <span className="text-xs text-slate-400">—</span>
+          <span className="text-xs text-slate-400" aria-hidden="true">—</span>
+          <label htmlFor="filter-max-price" className="sr-only">Precio máximo</label>
           <input
+            id="filter-max-price"
             type="number"
             placeholder="Máx"
             value={textValues.maxPrice}
