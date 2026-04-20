@@ -40,7 +40,12 @@ export async function findProperties(
   if (status) query = query.eq("status", status);
   if (minBedrooms !== undefined) query = query.gte("bedrooms", minBedrooms);
   if (minBathrooms !== undefined) query = query.gte("bathrooms", minBathrooms);
-  if (q) query = query.textSearch("fts", q, { type: "websearch" });
+  if (q) {
+  const searchTerm = q.trim();
+  if (searchTerm.length > 0) {
+    query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`);
+    }
+  }
 
   // Se usa OFFSET/LIMIT en lugar de keyset porque la UI permite saltar a cualquier página
   // y ordenar por múltiples columnas (precio, área, fecha). Keyset solo es eficiente con
