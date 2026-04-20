@@ -1,6 +1,11 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import {
+  findPropertyStatus,
+  updatePropertyStatus,
+  insertStatusHistory
+} from "../repositories/property.repository";
 import type { PropertyStatus } from "../types";
 
 type ServerClient = SupabaseClient<Database>;
@@ -41,16 +46,7 @@ export async function transitionPropertyStatus(
 ): Promise<void> {
   const supabase = client ?? createSupabaseServerClient();
 
-  const { data: property, error: fetchError } = await supabase
-    .from("properties")
-    .select("status")
-    .eq("id", propertyId)
-    .single();
-
-  if (fetchError || !property) {
-    throw new Error("Propiedad no encontrada");
-  }
-
+  const property = await findPropertyStatus(propertyId, supabase);
   const rawStatus = property.status;
 
   if (!isValidStatus(rawStatus)) {
@@ -64,26 +60,14 @@ export async function transitionPropertyStatus(
     throw new StatusTransitionError(fromStatus, toStatus);
   }
 
-  const { data: updated, error: updateError } = await supabase
-    .from("properties")
-    .update({ status: toStatus, updated_at: new Date().toISOString() })
-    .eq("id", propertyId)
-    .select("id");
+  const updated = await updatePropertyStatus(propertyId, toStatus, supabase);
 
-  if (updateError) throw updateError;
   if (!updated || updated.length === 0) {
     throw new Error("No autorizado para modificar esta propiedad");
   }
 
-  const { error: historyError } = await supabase
-    .from("property_status_history")
-    .insert({
-      property_id: propertyId,
-      from_status: fromStatus,
-      to_status: toStatus,
-      changed_by: userId,
-      reason: reason ?? null,
-    });
-
-  if (historyError) throw historyError;
+  await insertStatusHistory(
+    { property_id: propertyId, from_status: fromStatus, to_status: toStatus, changed_by: userId, reason: reason ?? null },
+    supabase
+  );
 }

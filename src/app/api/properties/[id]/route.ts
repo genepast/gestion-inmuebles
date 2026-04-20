@@ -6,6 +6,14 @@ import {
   transitionPropertyStatus,
   StatusTransitionError
 } from "@/features/properties/services/status.service";
+import {
+  findPropertyById,
+  findPropertyStatus,
+  findUserRole,
+  updateProperty,
+  refetchProperty,
+  deleteProperty
+} from "@/features/properties/repositories/property.repository";
 import type { PropertyStatus } from "@/features/properties/types";
 
 const statusPatchSchema = z.object({
@@ -26,19 +34,12 @@ export async function GET(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("properties")
-    .select(
-      "*, property_images(id, storage_path, position, is_primary), property_status_history(id, from_status, to_status, changed_by, reason, changed_at)"
-    )
-    .eq("id", params.id)
-    .single();
-
-  if (error || !data) {
+  try {
+    const data = await findPropertyById(params.id, supabase);
+    return NextResponse.json(data);
+  } catch {
     return NextResponse.json({ error: "Propiedad no encontrada" }, { status: 404 });
   }
-
-  return NextResponse.json(data);
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
@@ -65,60 +66,34 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   const { status: newStatus, reason, assigned_agent_id, ...rest } = parsed.data;
 
-  const { data: current, error: fetchError } = await supabase
-    .from("properties")
-    .select("status")
-    .eq("id", params.id)
-    .single();
+  try {
+    const current = await findPropertyStatus(params.id, supabase);
 
-  if (fetchError || !current) {
-    return NextResponse.json({ error: "Propiedad no encontrada" }, { status: 404 });
-  }
-
-  if (newStatus && newStatus !== current.status) {
-    try {
+    if (newStatus && newStatus !== current.status) {
       await transitionPropertyStatus(params.id, newStatus as PropertyStatus, user.id, reason);
-    } catch (err) {
-      if (err instanceof StatusTransitionError) {
-        return NextResponse.json({ error: err.message }, { status: 422 });
-      }
-      const message = err instanceof Error ? err.message : "Error al cambiar estado";
-      return NextResponse.json({ error: message }, { status: 403 });
     }
+
+    const profile = await findUserRole(user.id, supabase);
+    await updateProperty(
+      params.id,
+      {
+        ...rest,
+        updated_at: new Date().toISOString(),
+        ...(profile?.role === "admin" ? { assigned_agent_id: assigned_agent_id ?? null } : {})
+      },
+      supabase
+    );
+
+    const data = await refetchProperty(params.id, supabase);
+    return NextResponse.json(data);
+  } catch (err) {
+    if (err instanceof StatusTransitionError) {
+      return NextResponse.json({ error: err.message }, { status: 422 });
+    }
+    const message = err instanceof Error ? err.message : "Error al actualizar propiedad";
+    const status = message === "Propiedad no encontrada" ? 404 : 403;
+    return NextResponse.json({ error: message }, { status });
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const updatePayload = {
-    ...rest,
-    updated_at: new Date().toISOString(),
-    ...(profile?.role === "admin" ? { assigned_agent_id: assigned_agent_id ?? null } : {})
-  };
-
-  const { error: updateError } = await supabase
-    .from("properties")
-    .update(updatePayload)
-    .eq("id", params.id);
-
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-
-  const { data, error: refetchError } = await supabase
-    .from("properties")
-    .select()
-    .eq("id", params.id)
-    .single();
-
-  if (refetchError || !data) {
-    return NextResponse.json({ error: "Propiedad no encontrada" }, { status: 404 });
-  }
-
-  return NextResponse.json(data);
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
@@ -147,6 +122,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   try {
     await transitionPropertyStatus(params.id, newStatus as PropertyStatus, user.id, reason);
+    const data = await refetchProperty(params.id, supabase);
+    return NextResponse.json(data);
   } catch (err) {
     if (err instanceof StatusTransitionError) {
       return NextResponse.json({ error: err.message }, { status: 422 });
@@ -154,18 +131,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const message = err instanceof Error ? err.message : "Error al cambiar estado";
     return NextResponse.json({ error: message }, { status: 403 });
   }
-
-  const { data, error } = await supabase
-    .from("properties")
-    .select()
-    .eq("id", params.id)
-    .single();
-
-  if (error || !data) {
-    return NextResponse.json({ error: "Propiedad no encontrada" }, { status: 404 });
-  }
-
-  return NextResponse.json(data);
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
@@ -178,11 +143,11 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { error } = await supabase.from("properties").delete().eq("id", params.id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await deleteProperty(params.id, supabase);
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error al eliminar propiedad";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return new NextResponse(null, { status: 204 });
 }

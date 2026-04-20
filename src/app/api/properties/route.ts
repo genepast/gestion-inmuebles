@@ -2,6 +2,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { propertyApiSchema } from "@/features/properties/schemas/property.schema";
+import {
+  findProperties,
+  findUserRole,
+  createProperty
+} from "@/features/properties/repositories/property.repository";
 
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -26,57 +31,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Parámetros inválidos" }, { status: 400 });
   }
 
-  const { page, pageSize, minPrice, maxPrice, type, operation, city, status, minBedrooms, minBathrooms, sort, q } = parsed.data;
-
   const supabase = createSupabaseServerClient();
 
-  let query = supabase
-    .from("properties")
-    .select(
-      "id, title, property_type, operation_type, status, price_amount, price_currency, city, province, country, bedrooms, bathrooms, total_area_m2, source, created_at, property_images(storage_path, is_primary, position)",
-      { count: "exact" }
-    );
+  try {
+    const { items, total } = await findProperties(parsed.data, supabase);
+    const { page, pageSize } = parsed.data;
 
-  if (minPrice !== undefined) query = query.gte("price_amount", minPrice);
-  if (maxPrice !== undefined) query = query.lte("price_amount", maxPrice);
-  if (type) query = query.eq("property_type", type);
-  if (operation) query = query.eq("operation_type", operation);
-  if (city) query = query.ilike("city", `%${city}%`);
-  if (status) query = query.eq("status", status);
-  if (minBedrooms !== undefined) query = query.gte("bedrooms", minBedrooms);
-  if (minBathrooms !== undefined) query = query.gte("bathrooms", minBathrooms);
-  if (q) query = query.textSearch("fts", q, { type: "websearch" });
-
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  const [sortCol, sortDir] = (sort ?? "created_at:desc").split(":") as [string, string];
-  const { data, error, count } = await query
-    .order(sortCol, { ascending: sortDir === "asc", nullsFirst: false })
-    .range(from, to);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({
+      data: items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error al cargar propiedades";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const items = (data ?? []).map((p) => {
-    const images = (p.property_images ?? []) as { storage_path: string; is_primary: boolean | null; position: number }[];
-    const primary = images.find((i) => i.is_primary) ?? images.sort((a, b) => a.position - b.position)[0];
-    const primary_image_url = primary
-      ? supabase.storage.from("property-images").getPublicUrl(primary.storage_path).data.publicUrl
-      : null;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { property_images, ...rest } = p;
-    return { ...rest, primary_image_url };
-  });
-
-  return NextResponse.json({
-    data: items,
-    total: count ?? 0,
-    page,
-    pageSize,
-    totalPages: Math.ceil((count ?? 0) / pageSize)
-  });
 }
 
 export async function POST(request: NextRequest) {
@@ -104,24 +75,17 @@ export async function POST(request: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { reason: _reason, assigned_agent_id: formAgentId, ...propertyData } = parsed.data;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
+  const profile = await findUserRole(user.id, supabase);
+  const assigned_agent_id = profile?.role === "agent" ? user.id : (formAgentId ?? null);
 
-  const assigned_agent_id =
-    profile?.role === "agent" ? user.id : (formAgentId ?? null);
-
-  const { data, error } = await supabase
-    .from("properties")
-    .insert({ ...propertyData, created_by: user.id, source: "manual", assigned_agent_id })
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const data = await createProperty(
+      { ...propertyData, created_by: user.id, source: "manual", assigned_agent_id },
+      supabase
+    );
+    return NextResponse.json(data, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error al crear propiedad";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json(data, { status: 201 });
 }

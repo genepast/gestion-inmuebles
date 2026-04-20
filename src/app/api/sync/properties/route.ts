@@ -5,6 +5,8 @@ import { fetchExternalProperties } from "@/lib/external-api/client";
 import { mapRawToExternalPropertyDTO } from "@/lib/external-api/mappers";
 import type { ExternalPropertyDTO } from "@/lib/external-api/types";
 import type { TablesInsert } from "@/lib/supabase/database.types";
+import { findUserRole, findExistingExternalIds, upsertExternalProperties } from "@/features/properties/repositories/property.repository";
+import { createSyncLog, updateSyncLogSuccess, updateSyncLogError } from "@/features/properties/repositories/sync-log.repository";
 
 function dtoToDbRow(dto: ExternalPropertyDTO): TablesInsert<"properties"> {
   return {
@@ -37,7 +39,6 @@ function dtoToDbRow(dto: ExternalPropertyDTO): TablesInsert<"properties"> {
 }
 
 export async function POST() {
-  // Auth guard: solo admins pueden disparar una sincronización
   const serverClient = createSupabaseServerClient();
   const {
     data: { user },
@@ -47,92 +48,38 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await serverClient
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
+  const profile = await findUserRole(user.id, serverClient);
   if (profile?.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const admin = createSupabaseAdminClient();
-
-  // Registrar inicio del sync
-  const { data: syncLog, error: logError } = await admin
-    .from("sync_logs")
-    .insert({ status: "running" })
-    .select("id")
-    .single();
-
-  if (logError || !syncLog) {
-    return NextResponse.json({ error: "Failed to initialize sync log" }, { status: 500 });
-  }
-
+  const syncLog = await createSyncLog(admin);
   const logId = syncLog.id;
 
   try {
-    // Fetch desde la API externa — el cliente ya aplica backoff exponencial internamente
     const raw = await fetchExternalProperties();
     const dtos = raw.map(mapRawToExternalPropertyDTO);
 
     if (dtos.length === 0) {
-      await admin
-        .from("sync_logs")
-        .update({ status: "success", finished_at: new Date().toISOString(), items_created: 0, items_updated: 0 })
-        .eq("id", logId);
-
+      await updateSyncLogSuccess(logId, { itemsCreated: 0, itemsUpdated: 0 }, admin);
       return NextResponse.json({ status: "success", items_created: 0, items_updated: 0 });
     }
 
-    // Pre-flight: clasificar creates vs updates para el conteo en sync_logs
     const externalIds = dtos.map((d) => d.externalId);
-    const { data: existing } = await admin
-      .from("properties")
-      .select("external_id")
-      .in("external_id", externalIds);
-
-    const existingIdSet = new Set(
-      (existing ?? [])
-        .map((r) => r.external_id)
-        .filter((id): id is string => id !== null)
-    );
+    const existingIds = await findExistingExternalIds(externalIds, admin);
+    const existingIdSet = new Set(existingIds);
 
     const itemsCreated = dtos.filter((d) => !existingIdSet.has(d.externalId)).length;
     const itemsUpdated = dtos.filter((d) => existingIdSet.has(d.externalId)).length;
 
-    // Upsert idempotente — onConflict en external_id garantiza que si ya existe, actualiza
-    const { error: upsertError } = await admin
-      .from("properties")
-      .upsert(dtos.map(dtoToDbRow), { onConflict: "external_id" });
-
-    if (upsertError) throw new Error(upsertError.message);
-
-    await admin
-      .from("sync_logs")
-      .update({
-        status: "success",
-        finished_at: new Date().toISOString(),
-        items_created: itemsCreated,
-        items_updated: itemsUpdated,
-      })
-      .eq("id", logId);
+    await upsertExternalProperties(dtos.map(dtoToDbRow), admin);
+    await updateSyncLogSuccess(logId, { itemsCreated, itemsUpdated }, admin);
 
     return NextResponse.json({ status: "success", items_created: itemsCreated, items_updated: itemsUpdated });
-
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-
-    await admin
-      .from("sync_logs")
-      .update({
-        status: "error",
-        finished_at: new Date().toISOString(),
-        error_message: message,
-      })
-      .eq("id", logId);
-
+    await updateSyncLogError(logId, message, admin);
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }
